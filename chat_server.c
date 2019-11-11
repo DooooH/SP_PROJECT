@@ -7,7 +7,7 @@
 #include<netinet/in.h>
 #include<pthread.h>
 #define BUF_SIZE 100
-#define MAX_CLNT 256
+#define MAX_CLNT 2
 
 void *handle_clnt(void *arg);
 void send_msg(char *msg,int len);
@@ -45,13 +45,24 @@ int main(int argc, char *argv[])
 		clnt_adr_sz=sizeof(clnt_adr);
 		clnt_sock=accept(serv_sock, (struct sockaddr*)&clnt_adr,&clnt_adr_sz);
 
-		pthread_mutex_lock(&mutx);
-		clnt_socks[clnt_cnt++]=clnt_sock;
-		pthread_mutex_unlock(&mutx);
+		if (clnt_cnt < MAX_CLNT)
+		{
+			pthread_mutex_lock(&mutx);
+			clnt_socks[clnt_cnt++] = clnt_sock;
+			pthread_mutex_unlock(&mutx);
 
-		pthread_create(&t_id,NULL,handle_clnt,(void*)&clnt_sock);
-		pthread_detach(t_id);
-		printf("Connected client IP: %s\n",inet_ntoa(clnt_adr.sin_addr));
+			pthread_create(&t_id, NULL, handle_clnt, (void *)&clnt_sock);
+			pthread_detach(t_id);
+			printf("Connected client IP: %s	clnt_cnt: %d\n", inet_ntoa(clnt_adr.sin_addr), clnt_cnt);
+		}
+		else
+		{
+			printf("Already %d players!\n",MAX_CLNT);
+			write(clnt_sock,"!close!",strlen("!close!"));
+			close(clnt_sock);
+			continue;
+		}
+		
 	}
 	close(serv_sock);
 	return 0;

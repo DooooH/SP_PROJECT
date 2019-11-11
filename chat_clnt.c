@@ -15,6 +15,7 @@ void error_handling(char *msg);
 
 char name[NAME_SIZE]="[DEFAULT]";
 char msg[BUF_SIZE];
+int close_flag = 0;
 
 int main(int argc, char *argv[])
 {
@@ -50,6 +51,11 @@ void *send_msg(void *arg)
 	char name_msg[NAME_SIZE+BUF_SIZE];
 	while(1)
 	{
+		if (close_flag == 1)
+		{
+			printf("Player Full!\n");
+			return NULL;
+		}
 		fgets(msg,BUF_SIZE,stdin);
 		if(!strcmp(msg,"q\n")||!strcmp(msg,"Q\n"))
 		{
@@ -71,6 +77,11 @@ void *recv_msg(void *arg)
 		str_len=read(sock,name_msg,NAME_SIZE+BUF_SIZE-1);
 		if(str_len==-1)
 			return(void*)-1;
+		if(strcmp(name_msg,"!close!") == 0)
+		{
+			close_flag = 1;
+			return NULL;
+		}
 		name_msg[str_len]=0;
 		fputs(name_msg,stdout);
 	}
